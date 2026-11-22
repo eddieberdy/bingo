@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1420">
+<meta name="robots" content="noindex">
+<title>עריכת משפטים - בינגו הצוערים</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@700;900&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night: #0d1420; --night-2: #16202f; --night-3: #1d2a3d;
+    --ivory: #f8f3e8; --ivory-2: #efe6d3; --ink: #142033;
+    --gold: #c9a55a; --gold-hi: #ecd28f; --gold-lo: #9c7a34;
+    --muted: #8f9bb0; --line: rgba(201,165,90,.35);
+    --ok: #6fbf8e; --warn: #e2b34a; --bad: #e0705f;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Heebo", system-ui, sans-serif; color: var(--ivory);
+    background: radial-gradient(120% 50% at 50% -10%, #23324a 0%, transparent 60%), var(--night);
+    min-height: 100vh;
+    padding: max(16px, env(safe-area-inset-top)) 12px 160px;
+  }
+  .wrap { max-width: 640px; margin: 0 auto; }
+  header { text-align: center; padding: 6px 0 16px; }
+  .eyebrow { font-size: 12px; letter-spacing: 3px; color: var(--gold); font-weight: 500; }
+  h1 {
+    font-family: "Frank Ruhl Libre", serif; font-weight: 900; font-size: clamp(32px, 9vw, 44px);
+    margin: 6px 0 4px; line-height: 1.05;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold) 55%, var(--gold-lo));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .sub { color: var(--muted); font-size: 15px; }
+
+  .summary {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px;
+  }
+  .tile {
+    border: 1px solid var(--line); border-radius: 14px; padding: 9px 6px; text-align: center;
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+  }
+  .tile .n { font-family: "Frank Ruhl Libre", serif; font-size: 26px; font-weight: 700; color: var(--gold-hi); line-height: 1.1; }
+  .tile .l { font-size: 13px; color: var(--muted); }
+  .tile.alert .n { color: var(--bad); }
+
+  .msg { font-size: 14px; line-height: 1.5; padding: 10px 14px; border-radius: 12px; margin-bottom: 12px; display: none; }
+  .msg.show { display: block; }
+  .msg.warn { background: rgba(226,179,74,.12); border: 1px solid rgba(226,179,74,.4); color: #f3d690; }
+
+  .add {
+    display: flex; gap: 8px; margin-bottom: 12px;
+  }
+  .add input {
+    flex: 1; min-width: 0;
+    font-family: inherit; font-size: 16px; color: var(--ink);
+    background: var(--ivory); border: 2px solid transparent; border-radius: 12px; padding: 12px 14px;
+  }
+  .add input:focus { outline: none; border-color: var(--gold); }
+  .add button, .tool {
+    font-family: inherit; font-size: 15px; font-weight: 600; cursor: pointer;
+    border-radius: 12px; padding: 0 16px; border: none;
+  }
+  .add button { background: var(--gold); color: var(--night); }
+
+  .tools { display: flex; gap: 8px; margin-bottom: 14px; }
+  .search {
+    flex: 1; min-width: 0; font-family: inherit; font-size: 15px; color: var(--ivory);
+    background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px;
+  }
+  .search::placeholder { color: var(--muted); }
+  .search:focus { outline: none; border-color: var(--gold); }
+  .tool { background: rgba(255,255,255,.04); color: var(--ivory); border: 1px solid var(--line); padding: 10px 12px; }
+
+  .list { display: flex; flex-direction: column; gap: 8px; }
+  .row {
+    display: grid; grid-template-columns: 76px 1fr 40px; gap: 10px; align-items: center;
+    background: var(--night-3); border: 1px solid rgba(255,255,255,.06); border-radius: 14px; padding: 8px;
+  }
+  .row.dup { border-color: rgba(224,112,95,.6); }
+  .row.new { animation: flash 1.2s ease; }
+  @keyframes flash { 0% { background: rgba(201,165,90,.35); } 100% { background: var(--night-3); } }
+
+  /* תצוגת משבצת אמיתית בגודל טלפון */
+  .mini {
+    width: 76px; height: 76px; border-radius: 9px;
+    background: linear-gradient(180deg, var(--ivory), var(--ivory-2));
+    color: var(--ink); font-weight: 600; line-height: 1.18; text-align: center;
+    display: flex; align-items: center; justify-content: center; padding: 5px; overflow: hidden;
+    position: relative;
+  }
+  .mini span { display: block; width: 100%; overflow-wrap: normal; word-break: keep-all; }
+  .mini::after {
+    content: ""; position: absolute; top: 5px; left: 5px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--ok); box-shadow: 0 0 0 2px rgba(255,255,255,.7);
+  }
+  .mini.warn::after { background: var(--warn); }
+  .mini.bad::after { background: var(--bad); }
+
+  .field textarea {
+    width: 100%; resize: none; overflow: hidden;
+    font-family: inherit; font-size: 16px; line-height: 1.4; color: var(--ivory);
+    background: transparent; border: 1px solid transparent; border-radius: 10px; padding: 6px 8px;
+  }
+  .field textarea:focus { outline: none; border-color: var(--gold); background: rgba(255,255,255,.04); }
+  .field .hint { font-size: 12.5px; color: var(--muted); padding: 0 8px; }
+  .field .hint.warn { color: var(--warn); }
+  .field .hint.bad { color: var(--bad); }
+
+  .del {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid rgba(255,255,255,.08);
+    background: transparent; color: var(--muted); font-size: 20px; cursor: pointer; line-height: 1;
+  }
+  .del:active { background: rgba(224,112,95,.2); color: var(--bad); }
+
+  .legend { display: flex; gap: 14px; justify-content: center; font-size: 13px; color: var(--muted); margin: 6px 0 14px; flex-wrap: wrap; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-left: 5px; }
+
+  /* סרגל תחתון קבוע */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 10;
+    padding: 12px 12px max(12px, env(safe-area-inset-bottom));
+    background: linear-gradient(180deg, rgba(13,20,32,0), rgba(13,20,32,.96) 30%);
+  }
+  .bar .in { max-width: 640px; margin: 0 auto; display: flex; gap: 8px; }
+  .bar button {
+    font-family: inherit; font-size: 16px; font-weight: 600; border-radius: 14px; padding: 14px 10px; cursor: pointer;
+  }
+  .primary { flex: 2; border: none; color: var(--night); background: linear-gradient(180deg, var(--gold-hi), var(--gold)); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  .primary:disabled { opacity: .45; }
+  .secondary { flex: 1; color: var(--ivory); background: var(--night-2); border: 1px solid var(--line); }
+  .dirty { font-size: 13px; color: var(--gold-hi); text-align: center; margin-bottom: 6px; min-height: 18px; }
+
+  /* חלון שמירה */
+  .overlay {
+    position: fixed; inset: 0; z-index: 20; background: rgba(5,9,15,.75);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 18px;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    width: 100%; max-width: 440px; max-height: 92vh; overflow: auto;
+    background: linear-gradient(180deg, #1c2a40, var(--night)); border: 1px solid var(--gold);
+    border-radius: 20px; padding: 22px 20px;
+  }
+  .modal h2 { font-family: "Frank Ruhl Libre", serif; font-size: 28px; margin: 0 0 6px; color: var(--gold-hi); }
+  .modal ol { padding-right: 20px; margin: 10px 0 16px; line-height: 1.7; font-size: 15.5px; }
+  .modal ol b { color: var(--gold-hi); }
+  .copied { font-size: 14px; color: var(--ok); margin-bottom: 8px; min-height: 20px; }
+  .modal textarea {
+    width: 100%; height: 120px; direction: ltr; text-align: left;
+    font: 12px/1.4 ui-monospace, Menlo, monospace; color: var(--ivory);
+    background: rgba(0,0,0,.3); border: 1px solid var(--line); border-radius: 10px; padding: 8px;
+  }
+  .modal .actions { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+  .modal .actions a, .modal .actions button {
+    display: block; text-align: center; text-decoration: none; font-family: inherit; font-size: 16px; font-weight: 600;
+    border-radius: 12px; padding: 13px; cursor: pointer;
+  }
+  .modal .actions a { background: var(--gold); color: var(--night); }
+  .modal .actions button { background: transparent; color: var(--ivory); border: 1px solid var(--line); }
+
+  .toast {
+    position: fixed; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translate(-50%, -20px); opacity: 0;
+    background: var(--ivory); color: var(--ink); font-weight: 600; font-size: 15px; padding: 10px 18px; border-radius: 999px;
+    transition: all .3s; z-index: 30; white-space: nowrap; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+  }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .toast button { font: inherit; color: var(--gold-lo); background: none; border: none; margin-right: 8px; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">מצב עריכה</div>
+    <h1>משפטי הבינגו</h1>
+    <div class="sub">כל שינוי נשמר כטיוטה בטלפון הזה עד שמפרסמים</div>
+  </header>
+
+  <div class="summary">
+    <div class="tile" id="tCount"><div class="n" id="count">0</div><div class="l">משפטים</div></div>
+    <div class="tile" id="tLong"><div class="n" id="long">0</div><div class="l">ארוכים מדי</div></div>
+    <div class="tile" id="tDup"><div class="n" id="dups">0</div><div class="l">כפולים</div></div>
+  </div>
+
+  <div class="msg warn" id="minMsg"></div>
+
+  <form class="add" id="addForm">
+    <input id="newText" placeholder="משפט חדש..." autocomplete="off" enterkeyhint="done">
+    <button type="submit">הוספה</button>
+  </form>
+
+  <div class="tools">
+    <input class="search" id="search" type="search" placeholder="חיפוש במשפטים">
+    <button class="tool" id="reset">ביטול שינויים</button>
+  </div>
+
+  <div class="legend">
+    <span><i style="background:var(--ok)"></i>נכנס בנוח</span>
+    <span><i style="background:var(--warn)"></i>צפוף</span>
+    <span><i style="background:var(--bad)"></i>ארוך מדי</span>
+  </div>
+
+  <div class="list" id="list"></div>
+</div>
+
+<div class="bar">
+  <div class="dirty" id="dirty"></div>
+  <div class="in">
+    <button class="secondary" id="preview">תצוגה מקדימה</button>
+    <button class="primary" id="publish">פרסום</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <h2>פרסום השינויים</h2>
+    <div class="copied" id="copied"></div>
+    <ol>
+      <li>לוחצים על <b>פתיחת העורך בגיטהאב</b>.</li>
+      <li>מסמנים את כל הטקסט בקובץ ומדביקים במקומו.</li>
+      <li>לוחצים על <b>Commit changes</b>, ובחלון שנפתח שוב על אותו כפתור.</li>
+    </ol>
+    <div style="font-size:13.5px;color:var(--muted);line-height:1.6">תוך דקה-שתיים כל מי שנכנס לקישור יקבל את המשפטים החדשים, החל מהכרטיס הבא שלו. אם ההעתקה לא הצליחה, אפשר להעתיק מהתיבה:</div>
+    <textarea id="code" readonly></textarea>
+    <div class="actions">
+      <a id="ghLink" href="https://github.com/eddieberdy/bingo/edit/main/phrases.js" target="_blank" rel="noopener">פתיחת העורך בגיטהאב</a>
+      <button id="copyAgain">העתקה שוב</button>
+      <button id="closeModal">סגירה</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script src="phrases.js"></script>
+<script>
+(function () {
+  const DRAFT = "cadet-bingo-draft";
+  const $ = id => document.getElementById(id);
+  const ORIGINAL = PHRASES.slice();
+  let items;
+  try { items = JSON.parse(localStorage.getItem(DRAFT)); } catch (e) {}
+  if (!Array.isArray(items)) items = ORIGINAL.slice();
+
+  // מדידה בגודל משבצת 4x4 בטלפון ממוצע
+  const probe = document.createElement("div");
+  probe.className = "mini";
+  probe.style.cssText = "position:fixed;visibility:hidden;pointer-events:none;top:0;right:0";
+  probe.innerHTML = "<span></span>";
+  document.body.appendChild(probe);
+  const glue = t => t.replace(/"(?=\S)/g, '"⁠').replace(/(\S)"/g, '$1⁠"');
+
+  function measure(text) {
+    const sp = probe.firstChild;
+    sp.textContent = glue(text);
+    sp.style.overflowWrap = "normal";
+    let s = 16;
+    sp.style.fontSize = s + "px";
+    while (s > 10.5 && (sp.scrollHeight > probe.clientHeight - 6 || sp.scrollWidth > sp.clientWidth + 1)) {
+      s -= 0.5; sp.style.fontSize = s + "px";
+    }
+    const overflow = sp.scrollHeight > probe.clientHeight - 6 || sp.scrollWidth > sp.clientWidth + 1;
+    const level = overflow || s < 11.5 ? "bad" : s < 13 ? "warn" : "ok";
+    return { size: s, level };
+  }
+
+  const norm = t => t.trim().replace(/\s+/g, " ");
+  const isDirty = () => JSON.stringify(items.map(norm)) !== JSON.stringify(ORIGINAL);
+
+  function save() {
+    try { localStorage.setItem(DRAFT, JSON.stringify(items)); } catch (e) {}
+  }
+
+  function autosize(ta) { ta.style.height = "auto"; ta.style.height = ta.scrollHeight + "px"; }
+
+  function hintFor(m, text) {
+    if (!norm(text)) return ["bad", "משפט ריק - יימחק בפרסום"];
+    if (m.level === "bad") return ["bad", "ארוך מדי למשבצת. כדאי לקצר"];
+    if (m.level === "warn") return ["warn", "נכנס, אבל בגופן קטן"];
+    return ["", norm(text).split(" ").length + " מילים"];
+  }
+
+  function paintRow(row, text) {
+    const m = measure(text);
+    const mini = row.querySelector(".mini");
+    mini.className = "mini " + (m.level === "ok" ? "" : m.level);
+    const sp = mini.firstChild;
+    sp.textContent = glue(text);
+    sp.style.fontSize = m.size + "px";
+    sp.style.overflowWrap = m.level === "bad" ? "anywhere" : "normal";
+    const [cls, txt] = hintFor(m, text);
+    const h = row.querySelector(".hint");
+    h.className = "hint " + cls; h.textContent = txt;
+  }
+
+  function render(focusIdx) {
+    const q = norm($("search").value);
+    const list = $("list");
+    list.innerHTML = "";
+    items.forEach((text, i) => {
+      if (q && !text.includes(q)) return;
+      const row = document.createElement("div");
+      row.className = "row";
+      row.dataset.i = i;
+      row.innerHTML = '<div class="mini"><span></span></div><div class="field"><textarea rows="1" enterkeyhint="done"></textarea><div class="hint"></div></div><button class="del" aria-label="מחיקה">×</button>';
+      const ta = row.querySelector("textarea");
+      ta.value = text;
+      ta.addEventListener("input", () => {
+        items[i] = ta.value.replace(/\n/g, " ");
+        if (ta.value.includes("\n")) ta.value = items[i];
+        autosize(ta); paintRow(row, items[i]); save(); stats();
+      });
+      ta.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); ta.blur(); } });
+      row.querySelector(".del").addEventListener("click", () => remove(i));
+      list.appendChild(row);
+      paintRow(row, text);
+      requestAnimationFrame(() => autosize(ta));
+      if (i === focusIdx) { row.classList.add("new"); row.scrollIntoView({ behavior: "smooth", block: "center" }); }
+    });
+    if (!list.children.length) list.innerHTML = '<div style="text-align:center;color:var(--muted);padding:24px">לא נמצאו משפטים</div>';
+    stats();
+  }
+
+  function stats() {
+    const clean = items.map(norm).filter(Boolean);
+    const seen = new Map();
+    clean.forEach(t => seen.set(t, (seen.get(t) || 0) + 1));
+    const dupCount = [...seen.values()].filter(v => v > 1).length;
+    const longCount = clean.filter(t => measure(t).level === "bad").length;
+    $("count").textContent = clean.length;
+    $("long").textContent = longCount;
+    $("dups").textContent = dupCount;
+    $("tLong").classList.toggle("alert", longCount > 0);
+    $("tDup").classList.toggle("alert", dupCount > 0);
+    $("tCount").classList.toggle("alert", clean.length < 16);
+    document.querySelectorAll(".row").forEach(r => {
+      r.classList.toggle("dup", (seen.get(norm(items[r.dataset.i])) || 0) > 1);
+    });
+    const unique = seen.size;
+    const m = $("minMsg");
+    if (unique < 16) { m.textContent = `יש ${unique} משפטים שונים. צריך לפחות 16 בשביל לוח 4x4 ו-24 בשביל 5x5.`; m.classList.add("show"); }
+    else if (unique < 24) { m.textContent = `יש ${unique} משפטים שונים. מספיק ל-4x4, אבל לוח 5x5 צריך לפחות 24.`; m.classList.add("show"); }
+    else if (unique < 30) { m.textContent = `יש ${unique} משפטים. מומלץ להגיע ל-30 ומעלה כדי שהכרטיסים היומיים לא יחזרו על עצמם.`; m.classList.add("show"); }
+    else m.classList.remove("show");
+    $("publish").disabled = unique < 16;
+    $("dirty").textContent = isDirty() ? "יש שינויים שעוד לא פורסמו" : "";
+  }
+
+  let lastRemoved = null, tt;
+  function toast(html, ms) {
+    const t = $("toast"); t.innerHTML = html; t.classList.add("show");
+    clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), ms || 2600);
+  }
+
+  function remove(i) {
+    lastRemoved = { i, text: items[i] };
+    items.splice(i, 1); save(); render();
+    toast('המשפט נמחק<button id="undo">ביטול</button>', 4500);
+    $("undo").onclick = () => {
+      if (!lastRemoved) return;
+      items.splice(lastRemoved.i, 0, lastRemoved.text); lastRemoved = null; save(); render();
+      $("toast").classList.remove("show");
+    };
+  }
+
+  $("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const t = norm($("newText").value);
+    if (!t) return;
+    if (items.map(norm).includes(t)) { toast("המשפט הזה כבר קיים"); return; }
+    items.push(t); $("newText").value = ""; $("search").value = "";
+    save(); render(items.length - 1);
+  });
+
+  $("search").addEventListener("input", () => render());
+
+  $("reset").onclick = () => {
+    if (!isDirty()) { toast("אין שינויים לבטל"); return; }
+    if (!confirm("לבטל את כל השינויים ולחזור למשפטים שמפורסמים עכשיו?")) return;
+    items = ORIGINAL.slice(); localStorage.removeItem(DRAFT); render(); toast("חזרת למשפטים המפורסמים");
+  };
+
+  $("preview").onclick = () => {
+    const clean = [...new Set(items.map(norm).filter(Boolean))];
+    try { localStorage.setItem(DRAFT, JSON.stringify(clean)); } catch (e) {}
+    window.open("index.html?preview=1", "_blank");
+  };
+
+  function buildFile() {
+    const clean = [...new Set(items.map(norm).filter(Boolean))];
+    return "// משפטי הבינגו. כדי להוסיף או לשנות משפט - ערכו את הרשימה הזו, או השתמשו בעמוד edit.html.\n" +
+      "// כל משפט בין מירכאות, עם פסיק בסוף השורה.\n" +
+      "// צריך לפחות 16 משפטים בשביל לוח 4x4 ו-24 בשביל לוח 5x5.\n" +
+      "var PHRASES = [\n" + clean.map(t => "  " + JSON.stringify(t) + ",").join("\n") + "\n];\n";
+  }
+
+  async function copy(text) {
+    try { await navigator.clipboard.writeText(text); return true; }
+    catch (e) {
+      const ta = $("code"); ta.focus(); ta.select();
+      try { return document.execCommand("copy"); } catch (e2) { return false; }
+    }
+  }
+
+  async function openPublish() {
+    const file = buildFile();
+    $("code").value = file;
+    $("overlay").classList.add("show");
+    const ok = await copy(file);
+    $("copied").textContent = ok ? "✓ הקובץ המעודכן הועתק" : "לא הצלחתי להעתיק אוטומטית. העתיקו מהתיבה למטה.";
+    $("copied").style.color = ok ? "var(--ok)" : "var(--warn)";
+  }
+  $("publish").onclick = openPublish;
+  $("copyAgain").onclick = async () => {
+    const ok = await copy($("code").value);
+    $("copied").textContent = ok ? "✓ הועתק שוב" : "העתיקו ידנית מהתיבה";
+  };
+  $("closeModal").onclick = () => $("overlay").classList.remove("show");
+  $("overlay").onclick = e => { if (e.target.id === "overlay") $("overlay").classList.remove("show"); };
+
+  const start = () => render();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
+})();
+</script>
+</body>
+</html>

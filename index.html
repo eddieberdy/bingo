@@ -256,7 +256,18 @@
 <script src="phrases.js"></script>
 <script>
 (function () {
-  const STORE = "cadet-bingo-v2";
+  // תצוגה מקדימה מעמוד העריכה: משפטים מהטיוטה, בלי לגעת בהתקדמות האמיתית
+  const PREVIEW = new URLSearchParams(location.search).has("preview");
+  const STORE = PREVIEW ? "cadet-bingo-preview" : "cadet-bingo-v2";
+  if (PREVIEW) {
+    try {
+      const draft = JSON.parse(localStorage.getItem("cadet-bingo-draft"));
+      if (Array.isArray(draft) && draft.length) PHRASES = draft;
+    } catch (e) {}
+    localStorage.removeItem("cadet-bingo-preview");
+    const tag = document.querySelector(".eyebrow");
+    if (tag) tag.textContent = "תצוגה מקדימה - טיוטה";
+  }
   const FREE = "חופשי";
   const RANKS = [
     [0, "התנסות ראשונה"],
