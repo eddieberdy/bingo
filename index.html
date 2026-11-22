@@ -176,6 +176,17 @@
   }
 
   /* ---------- תחתית ---------- */
+  .newgame {
+    display: block; width: 100%; margin-top: 14px;
+    font: 700 17px "Heebo", sans-serif; color: var(--night);
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold)); border: none; border-radius: 16px;
+    padding: 14px; cursor: pointer; box-shadow: 0 10px 26px rgba(0,0,0,.35);
+  }
+  .newgame:active { transform: scale(.98); }
+  .reset { display: block; margin: 6px auto 0; font: 500 13px "Heebo", sans-serif; color: var(--muted); opacity: .75;
+    background: none; border: none; padding: 8px 12px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+  .win .newg { display: block; width: 100%; margin-top: 8px; font: 600 15px "Heebo", sans-serif; color: var(--gold-hi);
+    background: transparent; border: 1px dashed var(--hair); border-radius: 14px; padding: 11px; cursor: pointer; }
   .foot { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; }
   .ghost {
     font: 500 14.5px "Heebo", sans-serif; color: var(--muted);
@@ -263,12 +274,12 @@
     </div>
   </div>
 
+  <button class="newgame" id="newCard">משחק חדש</button>
   <div class="foot">
-    <button class="ghost" id="newCard">כרטיס חדש</button>
-    <span class="sep"></span>
     <button class="ghost" id="clearMarks">ניקוי סימונים</button>
     <div class="seg" id="seg"><button id="size4">4×4</button><button id="size5">5×5</button></div>
   </div>
+  <button class="reset" id="resetAll">איפוס כל הנתונים</button>
 </div>
 
 <div class="overlay" id="overlay">
@@ -280,6 +291,7 @@
       <button class="primary" id="closeWin">ממשיכים</button>
       <button class="second" id="share">שיתוף</button>
     </div>
+    <button class="newg" id="winNew">משחק חדש</button>
   </div>
 </div>
 <div class="overlay ask" id="askBox">
@@ -393,6 +405,7 @@
   if (!S.stats) S.stats = { total: 0, streak: 0, lastPlayed: null };
   if (S.card && !S.card.awarded) S.card.awarded = S.card.seen || [];
   if (!canFive) S.size = 4;
+  if (!S.daily || S.daily.day !== todayKey()) S.daily = { day: todayKey(), games: 1 };
   let freshDay = false;
   if (!S.card || S.card.day !== todayKey()) { freshDay = !!S.card; S.card = newCard(S.size || 4); }
   // המאגר השתנה, או שהלוח גדול מדי למאגר - כרטיס חדש
@@ -535,6 +548,10 @@
   let lastWin = "";
   function celebrate(title, text) {
     lastWin = title;
+    const full = title === "כרטיס מלא!";
+    $("closeWin").textContent = full ? "משחק חדש" : "ממשיכים";
+    $("closeWin").onclick = full ? newGame : closeWin;
+    $("winNew").style.display = full ? "none" : "block";
     $("winTitle").textContent = title; $("winText").textContent = text;
     $("overlay").classList.add("show");
     confetti();
@@ -558,8 +575,9 @@
   function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2600); }
 
   const hasProgress = () => S.card.cells.some(c => c.m && !c.free);
-  function ask(msg, yes, onYes) {
-    if (!hasProgress()) { onYes(); return; }
+  function ask(msg, yes, onYes, force, title) {
+    if (!force && !hasProgress()) { onYes(); return; }
+    $("askTitle").textContent = title || "בטוח?";
     $("askText").textContent = msg; $("askYes").textContent = yes || "כן";
     $("askBox").classList.add("show");
     $("askYes").onclick = () => { $("askBox").classList.remove("show"); onYes(); };
@@ -567,7 +585,24 @@
   $("askNo").onclick = () => $("askBox").classList.remove("show");
   $("askBox").onclick = e => { if (e.target.id === "askBox") $("askBox").classList.remove("show"); };
 
-  $("newCard").onclick = () => ask("הסימונים בכרטיס הנוכחי יימחקו.", "כרטיס חדש", () => { S.card = newCard(S.card.size); save(); render(); toast("כרטיס חדש מוכן"); });
+  function newGame() {
+    $("overlay").classList.remove("show");
+    S.card = newCard(S.card.size);
+    S.daily.games += 1;
+    save(); render(); renderDate();
+    toast("משחק " + S.daily.games + " היום. בהצלחה");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  const finished = () => S.card.cells.every(c => c.m || c.blank);
+  $("newCard").onclick = () => {
+    if (finished()) { newGame(); return; }
+    ask("הכרטיס הנוכחי ייסגר. הבינגו שכבר צברת נשמר.", "משחק חדש", newGame, false, "להתחיל משחק חדש?");
+  };
+  $("winNew").onclick = newGame;
+  $("resetAll").onclick = () => ask("הרצף, מספר הבינגו והדרגה יחזרו לאפס, וגם הכרטיס הנוכחי. אי אפשר לבטל את זה.", "איפוס", () => {
+    S = { stats: { total: 0, streak: 0, lastPlayed: null }, card: newCard(S.card.size), size: S.size || 4, daily: { day: todayKey(), games: 1 } };
+    save(); render(); renderDate(); toast("הכול אופס. מתחילים מחדש");
+  }, true, "לאפס את כל הנתונים?");
   $("clearMarks").onclick = () => {
     if (!hasProgress()) { toast("אין סימונים לנקות"); return; }
     ask("כל הסימונים בכרטיס יימחקו. הבינגו שכבר צברת נשאר.", "ניקוי", () => {
@@ -584,8 +619,13 @@
   try { if (!localStorage.getItem(INTRO) && !PREVIEW) $("intro").hidden = false; } catch (e) {}
   $("introGo").onclick = () => { $("intro").hidden = true; try { localStorage.setItem(INTRO, "1"); } catch (e) {} };
 
-  const d = new Date();
-  $("date").innerHTML = "<b>" + d.toLocaleDateString("he-IL", { weekday: "long" }) + "</b> · " + d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+  function renderDate() {
+    const d = new Date();
+    let h = "<b>" + d.toLocaleDateString("he-IL", { weekday: "long" }) + "</b> · " + d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+    if (S.daily.games > 1) h += " · משחק " + S.daily.games + " היום";
+    $("date").innerHTML = h;
+  }
+  renderDate();
 
   // קונפטי בגווני זהב
   const cv = $("confetti"), ctx = cv.getContext("2d");
@@ -619,8 +659,7 @@
     S.card = newCard(S.size || 4);
     if (S.stats.lastPlayed && dayDiff(S.stats.lastPlayed, todayKey()) > 1) S.stats.streak = 0;
     save(); render(); toast("כרטיס חדש ליום חדש");
-    const d2 = new Date();
-    $("date").innerHTML = "<b>" + d2.toLocaleDateString("he-IL", { weekday: "long" }) + "</b> · " + d2.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+    S.daily = { day: todayKey(), games: 1 }; save(); renderDate();
   }
   document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });
   addEventListener("focus", checkDay);
