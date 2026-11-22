@@ -1,0 +1,2 @@
+# bingo
+Cadet course bingo
