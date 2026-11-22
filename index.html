@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>בינגו הצוערים</title>
+<meta name="description" content="בינגו לקורס הצוערים לשלטון מקומי">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --ink: #1d2a3a;
+    --muted: #6b7380;
+    --card: #ffffff;
+    --line: #ddd6c8;
+    --mark: #1f4e79;
+    --mark-ink: #ffffff;
+    --win: #d98e04;
+    --win-soft: #fff1d6;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; }
+  body {
+    font-family: "Heebo", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 18px 10px 28px;
+  }
+  header { text-align: center; margin-bottom: 14px; }
+  h1 {
+    font-size: clamp(30px, 7vw, 46px);
+    font-weight: 900;
+    margin: 0;
+    letter-spacing: -0.5px;
+  }
+  h1 span { color: var(--win); }
+  .sub { color: var(--muted); font-size: 15px; margin-top: 2px; }
+
+  .status {
+    display: flex; gap: 10px; align-items: center; justify-content: center;
+    margin-bottom: 12px; font-size: 15px; color: var(--muted);
+  }
+  .pill {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 12px;
+  }
+  .pill b { color: var(--ink); }
+
+  .board {
+    width: min(94vw, 620px);
+    display: grid;
+    gap: 6px;
+    background: var(--line);
+    padding: 6px;
+    border-radius: 14px;
+    box-shadow: 0 8px 30px rgba(29, 42, 58, 0.12);
+  }
+  .cell {
+    aspect-ratio: 1 / 1;
+    background: var(--card);
+    border: none;
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 4px;
+    font-family: inherit;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.2;
+    cursor: pointer;
+    user-select: none;
+    transition: background .15s, color .15s, transform .08s;
+    overflow: hidden;
+    word-break: break-word;
+    hyphens: auto;
+  }
+  .board.s5 .cell { font-size: clamp(10px, 2.55vw, 15px); }
+  .board.s4 .cell { font-size: clamp(12px, 3.3vw, 18px); }
+  .cell:active { transform: scale(.96); }
+  .cell.marked { background: var(--mark); color: var(--mark-ink); }
+  .cell.free {
+    background: var(--win-soft); color: var(--win);
+    font-weight: 900; cursor: default;
+  }
+  .cell.free.marked { background: var(--win-soft); color: var(--win); }
+  .cell.inline { box-shadow: inset 0 0 0 3px var(--win); }
+  .cell.marked.inline { background: #17395a; }
+
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    margin-top: 16px;
+  }
+  .btn {
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    background: var(--card); color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 14px; cursor: pointer;
+  }
+  .btn:hover { border-color: var(--ink); }
+  .btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .hint { color: var(--muted); font-size: 13px; margin-top: 14px; text-align: center; max-width: 520px; }
+
+  /* חלון ניצחון */
+  .overlay {
+    position: fixed; inset: 0; background: rgba(29, 42, 58, .55);
+    display: none; align-items: center; justify-content: center; z-index: 20;
+    padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .win-box {
+    background: var(--card); border-radius: 18px; padding: 26px 30px;
+    text-align: center; max-width: 360px; width: 100%;
+    animation: pop .35s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  .win-box h2 { font-size: 54px; font-weight: 900; margin: 0; color: var(--win); line-height: 1; }
+  .win-box p { margin: 10px 0 18px; font-size: 17px; }
+  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  canvas#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>בינגו <span>הצוערים</span></h1>
+    <div class="sub">קורס הצוערים לשלטון מקומי</div>
+  </header>
+
+  <div class="status">
+    <div class="pill">סומנו <b id="markedCount">0</b></div>
+    <div class="pill">שורות <b id="lineCount">0</b></div>
+  </div>
+
+  <div id="board" class="board"></div>
+
+  <div class="controls">
+    <button class="btn" id="newCard">כרטיס חדש</button>
+    <button class="btn" id="clearMarks">ניקוי סימונים</button>
+    <button class="btn" id="size5">5x5</button>
+    <button class="btn" id="size4">4x4</button>
+  </div>
+  <div class="hint">לוחצים על משפט כשהוא קורה, לוחצים שוב כדי לבטל. שורה, עמודה או אלכסון מלאים - בינגו. הכרטיס נשמר בדפדפן, כך שאפשר לסגור ולפתוח את הקישור בלי לאבד אותו.</div>
+
+  <div class="overlay" id="overlay">
+    <div class="win-box">
+      <h2 id="winTitle">בינגו!</h2>
+      <p id="winText">השלמת שורה. עכשיו לצעוק בקול.</p>
+      <button class="btn on" id="closeWin">ממשיכים לשחק</button>
+    </div>
+  </div>
+  <canvas id="confetti"></canvas>
+
+<script src="phrases.js"></script>
+<script>
+(function () {
+  const STORE = "cadet-bingo-v1";
+  const FREE = "★ חופשי";
+  const boardEl = document.getElementById("board");
+  let state = load() || newState(5);
+  let seenLines = new Set(state.seenLines || []);
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+
+  function newState(size) {
+    const needFree = size % 2 === 1;
+    const count = size * size - (needFree ? 1 : 0);
+    const pool = shuffle([...new Set(PHRASES)]);
+    const picked = pool.slice(0, count);
+    while (picked.length < count) picked.push("—");
+    const cells = [];
+    const mid = Math.floor((size * size) / 2);
+    let k = 0;
+    for (let i = 0; i < size * size; i++) {
+      if (needFree && i === mid) cells.push({ t: FREE, m: true, free: true });
+      else cells.push({ t: picked[k++], m: false });
+    }
+    return { size, cells, seenLines: [], full: false };
+  }
+
+  function save() {
+    state.seenLines = [...seenLines];
+    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
+  }
+  function load() {
+    try {
+      const s = JSON.parse(localStorage.getItem(STORE));
+      if (s && s.cells && s.cells.length === s.size * s.size) return s;
+    } catch (e) {}
+    return null;
+  }
+
+  function lines(size) {
+    const L = [];
+    for (let r = 0; r < size; r++) L.push({ id: "r" + r, idx: [...Array(size)].map((_, c) => r * size + c) });
+    for (let c = 0; c < size; c++) L.push({ id: "c" + c, idx: [...Array(size)].map((_, r) => r * size + c) });
+    L.push({ id: "d1", idx: [...Array(size)].map((_, i) => i * size + i) });
+    L.push({ id: "d2", idx: [...Array(size)].map((_, i) => i * size + (size - 1 - i)) });
+    return L;
+  }
+
+  function render() {
+    const { size, cells } = state;
+    boardEl.className = "board s" + size;
+    boardEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+    boardEl.innerHTML = "";
+    const done = lines(size).filter(l => l.idx.every(i => cells[i].m));
+    const inLine = new Set(done.flatMap(l => l.idx));
+    cells.forEach((c, i) => {
+      const b = document.createElement("button");
+      b.className = "cell" + (c.m ? " marked" : "") + (c.free ? " free" : "") + (inLine.has(i) ? " inline" : "");
+      b.textContent = c.t;
+      if (!c.free) b.addEventListener("click", () => toggle(i));
+      boardEl.appendChild(b);
+    });
+    document.getElementById("markedCount").textContent = cells.filter(c => c.m && !c.free).length;
+    document.getElementById("lineCount").textContent = done.length;
+    document.getElementById("size5").classList.toggle("on", size === 5);
+    document.getElementById("size4").classList.toggle("on", size === 4);
+    return done;
+  }
+
+  function toggle(i) {
+    state.cells[i].m = !state.cells[i].m;
+    const done = render();
+    const doneIds = new Set(done.map(l => l.id));
+    // שורות שבוטלו יוכלו לזכות שוב
+    seenLines.forEach(id => { if (!doneIds.has(id)) seenLines.delete(id); });
+    const fresh = done.filter(l => !seenLines.has(l.id));
+    fresh.forEach(l => seenLines.add(l.id));
+    const allMarked = state.cells.every(c => c.m);
+    if (allMarked && !state.full) {
+      state.full = true;
+      celebrate("בלאק-אאוט!", "סימנת את כל הכרטיס. הקורס הזה לא יפתיע אותך יותר.");
+    } else if (fresh.length) {
+      const n = done.length;
+      celebrate("בינגו!", n === 1 ? "השלמת שורה. עכשיו לצעוק בקול." : `כבר ${n} שורות. מישהו פה מקשיב טוב מדי.`);
+    }
+    if (!allMarked) state.full = false;
+    save();
+  }
+
+  function celebrate(title, text) {
+    document.getElementById("winTitle").textContent = title;
+    document.getElementById("winText").textContent = text;
+    document.getElementById("overlay").classList.add("show");
+    confetti();
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+  }
+
+  document.getElementById("closeWin").onclick = () => document.getElementById("overlay").classList.remove("show");
+  document.getElementById("overlay").onclick = e => { if (e.target.id === "overlay") e.target.classList.remove("show"); };
+
+  document.getElementById("newCard").onclick = () => {
+    if (!confirmIfProgress("לערבב כרטיס חדש? הסימונים הנוכחיים יימחקו.")) return;
+    state = newState(state.size); seenLines = new Set(); save(); render();
+  };
+  document.getElementById("clearMarks").onclick = () => {
+    if (!confirmIfProgress("לנקות את כל הסימונים?")) return;
+    state.cells.forEach(c => { if (!c.free) c.m = false; });
+    seenLines = new Set(); state.full = false; save(); render();
+  };
+  function setSize(n) {
+    if (state.size === n) return;
+    if (!confirmIfProgress("החלפת גודל יוצרת כרטיס חדש. להמשיך?")) return;
+    state = newState(n); seenLines = new Set(); save(); render();
+  }
+  document.getElementById("size5").onclick = () => setSize(5);
+  document.getElementById("size4").onclick = () => setSize(4);
+
+  function confirmIfProgress(msg) {
+    const any = state.cells.some(c => c.m && !c.free);
+    return !any || window.confirm(msg);
+  }
+
+  // קונפטי פשוט
+  const cv = document.getElementById("confetti");
+  const ctx = cv.getContext("2d");
+  let parts = [], raf = null;
+  function confetti() {
+    cv.width = innerWidth; cv.height = innerHeight;
+    const colors = ["#d98e04", "#1f4e79", "#c0392b", "#2e8b57", "#f4c542"];
+    for (let i = 0; i < 160; i++) {
+      parts.push({
+        x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * 0.4,
+        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
+        vy: 2 + Math.random() * 4, vx: -2 + Math.random() * 4,
+        r: Math.random() * Math.PI, vr: -0.2 + Math.random() * 0.4,
+        c: colors[i % colors.length]
+      });
+    }
+    if (!raf) tick();
+  }
+  function tick() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += 0.05;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+    });
+    parts = parts.filter(p => p.y < cv.height + 30);
+    raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0, 0, cv.width, cv.height), null);
+  }
+
+  save();
+  render();
+})();
+</script>
+</body>
+</html>
