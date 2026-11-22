@@ -27,6 +27,7 @@
     --hair: rgba(201,165,90,.28);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  button { touch-action: manipulation; }
   html, body { margin: 0; }
   body {
     font-family: "Heebo", system-ui, sans-serif;
@@ -153,7 +154,8 @@
     font-family: "Frank Ruhl Libre", serif; font-weight: 700;
     box-shadow: 0 0 0 1px var(--hair) inset;
   }
-  .cell.free::before, .cell.free::after { content: none; }
+  .cell.free::before, .cell.free::after, .cell.blank::before, .cell.blank::after { content: none; }
+  .cell.blank { background: rgba(255,255,255,.04); box-shadow: none; cursor: default; color: transparent; }
   .cell.stamp { animation: stamp .3s cubic-bezier(.2, 1.6, .4, 1); }
   @keyframes stamp { 0% { transform: scale(.86); } 100% { transform: scale(1); } }
 
@@ -228,6 +230,8 @@
     transition: all .3s ease; z-index: 25; white-space: nowrap;
   }
   .toast.show { transform: translate(-50%, 0); opacity: 1; }
+  .ask .win h2 { font-size: 30px; }
+  .ask .win p { margin: 8px 0 18px; }
   .preview-tag { display: none; text-align: center; font-size: 13px; color: var(--night); background: var(--gold); border-radius: 8px; padding: 4px 10px; margin: 0 auto 10px; }
 </style>
 </head>
@@ -278,6 +282,16 @@
     </div>
   </div>
 </div>
+<div class="overlay ask" id="askBox">
+  <div class="win">
+    <h2 id="askTitle">בטוח?</h2>
+    <p id="askText"></p>
+    <div class="row">
+      <button class="primary" id="askYes">כן</button>
+      <button class="second" id="askNo">ביטול</button>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 <canvas id="confetti"></canvas>
 
@@ -311,18 +325,65 @@
   const UNIQUE = [...new Set(PHRASES)];
   const canFive = UNIQUE.length >= 24;
 
+  // ---------- רמת קושי ----------
+  // הערכה כמה סביר שכל משפט ייאמר ביום רגיל (0-1). משפט שלא מופיע כאן מקבל 0.5.
+  const ODDS = {
+    "קררר פהההה": 0.8, "אמרתי בלב - מיציתי": 0.8, "אמרתי בלב - שתוק כבר": 0.7,
+    "לא מצחיק": 0.7, "אני רק שאלה": 0.7, "הרכבת איחרה": 0.6, "אבדה התקווה": 0.6,
+    "הגברת גלגלה עיניים": 0.5, "עבדתי ברשויות המקומיות": 0.5, "מוד ממלכתי לא אחותי": 0.4,
+    "אני עבדתי ברשויות": 0.4, "טעות בשם המספר": 0.3, "יאוו איזה מפגר": 0.3,
+    "שיח על השכר": 0.3, "לוטם אחלה חברה": 0.2, "בקרוב מלחמה": 0.2
+  };
+  // משפטים שבדרך כלל נאמרים יחד - לא לשים באותה שורה
+  const TWINS = [["עבדתי ברשויות המקומיות", "אני עבדתי ברשויות"], ["אמרתי בלב - מיציתי", "אמרתי בלב - שתוק כבר"]];
+  const oddsOf = t => (t in ODDS ? ODDS[t] : 0.5);
+
+  // הסיכוי שהשורה הכי קלה בכרטיס תושלם. ככל שקטן יותר - הכרטיס קשה יותר.
+  function easiestLine(order, size) {
+    let worst = 0;
+    for (const l of lines(size)) {
+      let pr = 1;
+      const set = new Set();
+      for (const i of l.idx) { const t = order[i]; if (t !== null) { pr *= oddsOf(t); set.add(t); } }
+      for (const [a, b] of TWINS) if (set.has(a) && set.has(b)) pr /= Math.min(oddsOf(a), oddsOf(b));
+      if (pr > worst) worst = pr;
+    }
+    return worst;
+  }
+
   function newCard(size) {
     const needFree = size % 2 === 1;
     const count = size * size - (needFree ? 1 : 0);
-    const picked = shuffle(UNIQUE).slice(0, count);
-    while (picked.length < count) picked.push("-");
-    const mid = Math.floor((size * size) / 2), cells = [];
-    let k = 0;
-    for (let i = 0; i < size * size; i++) {
-      if (needFree && i === mid) cells.push({ t: FREE, m: true, free: true });
-      else cells.push({ t: picked[k++], m: false });
+    const mid = Math.floor((size * size) / 2);
+    const tries = 400;
+    let best = null, bestScore = Infinity;
+    for (let n = 0; n < tries; n++) {
+      // כשהמאגר גדול מהכרטיס, מעדיפים את המשפטים הנדירים
+      let pool = shuffle(UNIQUE);
+      if (pool.length > count) pool = pool.sort((a, b) => oddsOf(a) - oddsOf(b) + (Math.random() - .5) * 0.5).slice(0, count);
+      pool = shuffle(pool);
+      const order = [];
+      let k = 0;
+      for (let i = 0; i < size * size; i++) order.push(needFree && i === mid ? null : (k < pool.length ? pool[k++] : null));
+      const sc = easiestLine(order, size);
+      if (sc < bestScore) { bestScore = sc; best = order; }
     }
-    return { size, cells, seen: [], full: false, day: todayKey() };
+    // שיפור: מחליפים זוגות משבצות כל עוד הכרטיס נעשה קשה יותר
+    const movable = best.map((t, i) => (t !== null ? i : -1)).filter(i => i >= 0);
+    for (let n = 0; n < 6000; n++) {
+      const x = movable[Math.floor(Math.random() * movable.length)];
+      const y = movable[Math.floor(Math.random() * movable.length)];
+      if (x === y) continue;
+      [best[x], best[y]] = [best[y], best[x]];
+      const sc = easiestLine(best, size);
+      if (sc <= bestScore) bestScore = sc; else [best[x], best[y]] = [best[y], best[x]];
+    }
+    const cells = best.map((t, i) => {
+      if (needFree && i === mid) return { t: FREE, m: true, free: true };
+      if (t === null) return { t: "", m: false, blank: true };
+      return { t, m: false };
+    });
+    return { size, cells, awarded: [], full: false, day: todayKey() };
   }
 
   const load = () => { try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; } };
@@ -330,11 +391,12 @@
 
   let S = load() || { stats: { total: 0, streak: 0, lastPlayed: null }, card: null, size: 4 };
   if (!S.stats) S.stats = { total: 0, streak: 0, lastPlayed: null };
+  if (S.card && !S.card.awarded) S.card.awarded = S.card.seen || [];
   if (!canFive) S.size = 4;
   let freshDay = false;
   if (!S.card || S.card.day !== todayKey()) { freshDay = !!S.card; S.card = newCard(S.size || 4); }
   // המאגר השתנה, או שהלוח גדול מדי למאגר - כרטיס חדש
-  if (S.card.cells.some(c => !c.free && !UNIQUE.includes(c.t)) || (!canFive && S.card.size === 5)) S.card = newCard(S.size || 4);
+  if (S.card.cells.some(c => !c.free && !c.blank && !UNIQUE.includes(c.t)) || (!canFive && S.card.size === 5)) S.card = newCard(S.size || 4);
   if (S.stats.lastPlayed && dayDiff(S.stats.lastPlayed, todayKey()) > 1) S.stats.streak = 0;
 
   function lines(size) {
@@ -378,7 +440,8 @@
     cells.forEach((c, i) => {
       const b = document.createElement("button");
       let cls = "cell";
-      if (c.free) cls += " free";
+      if (c.blank) cls += " blank";
+      else if (c.free) cls += " free";
       else if (a.inLine.has(i)) cls += " marked line";
       else if (c.m) cls += " marked";
       if (a.near.has(i)) cls += " near";
@@ -387,13 +450,14 @@
       b.className = cls;
       b.setAttribute("aria-pressed", c.m ? "true" : "false");
       const sp = document.createElement("span"); sp.textContent = glue(c.t); b.appendChild(sp);
-      if (!c.free) b.addEventListener("click", () => toggle(i));
+      if (!c.free && !c.blank) b.addEventListener("click", () => toggle(i));
       boardEl.appendChild(b); els.push(b);
     });
     // טיפוגרפיה אחידה: כולם באותו גודל, חוץ ממשפטים שחייבים קטן יותר
-    const fits = els.map((el, i) => fitSize(el, cells[i].free ? base + 2 : base, 10.5));
+    const fits = els.map((el, i) => cells[i].blank ? base : fitSize(el, cells[i].free ? base + 2 : base, 10.5));
     const floor = size === 4 ? 14 : 12;
-    const uniform = Math.max(Math.min(...fits.filter((_, i) => !cells[i].free)), floor);
+    const playFits = fits.filter((_, i) => !cells[i].free && !cells[i].blank);
+    const uniform = Math.max(playFits.length ? Math.min(...playFits) : floor, floor);
     els.forEach((el, i) => {
       const s = cells[i].free ? fits[i] : Math.min(fits[i], uniform);
       el.firstChild.style.fontSize = s + "px";
@@ -410,7 +474,7 @@
     const st = $("status"), tx = $("statusText");
     const marked = S.card.cells.filter(c => c.m && !c.free).length;
     st.className = "status";
-    if (S.card.cells.every(c => c.m)) { st.classList.add("is-win"); tx.textContent = "כרטיס מלא. אין יותר מה ללמד אותך"; }
+    if (S.card.cells.every(c => c.m || c.blank)) { st.classList.add("is-win"); tx.textContent = "כרטיס מלא. אין יותר מה ללמד אותך"; }
     else if (a.done.length) { st.classList.add("is-win"); tx.textContent = a.done.length === 1 ? "בינגו! עוד שורה?" : `${a.done.length} שורות היום`; }
     else if (a.need === 1) { st.classList.add("is-hot"); tx.textContent = "משבצת אחת מבינגו"; }
     else if (marked === 0) tx.textContent = "לוחצים על משפט כשהוא נאמר";
@@ -443,19 +507,19 @@
   }
 
   function toggle(i) {
+    if (S.card.day !== todayKey()) { checkDay(); return; }
     const c = S.card.cells[i];
     c.m = !c.m;
     if (c.m) { markPlayedToday(); if (navigator.vibrate) navigator.vibrate(12); }
     const a0 = analyse();
-    const ids = new Set(a0.done.map(l => l.id));
-    S.card.seen = S.card.seen.filter(id => ids.has(id));
-    const fresh = a0.done.filter(l => !S.card.seen.includes(l.id));
-    fresh.forEach(l => S.card.seen.push(l.id));
+    // כל שורה נספרת פעם אחת בכרטיס, גם אם מבטלים ומסמנים שוב
+    const fresh = a0.done.filter(l => !S.card.awarded.includes(l.id));
+    fresh.forEach(l => S.card.awarded.push(l.id));
     const before = rankOf(S.stats.total);
     S.stats.total += fresh.length;
     const after = rankOf(S.stats.total);
     render({ stamp: c.m ? i : -1, sweep: new Set(fresh.flatMap(l => l.idx)) });
-    const all = S.card.cells.every(x => x.m);
+    const all = S.card.cells.every(x => x.m || x.blank);
     if (all && !S.card.full) {
       S.card.full = true;
       setTimeout(() => celebrate("כרטיס מלא!", "סימנת את כל הכרטיס. אין יותר מה ללמד אותך."), 350);
@@ -465,7 +529,6 @@
       if (after !== before) txt = `עלית בדרגה: ${after}.`;
       setTimeout(() => celebrate("בינגו!", txt), 350);
     }
-    if (!all) S.card.full = false;
     save();
   }
 
@@ -495,15 +558,23 @@
   function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2600); }
 
   const hasProgress = () => S.card.cells.some(c => c.m && !c.free);
-  const ask = msg => !hasProgress() || window.confirm(msg);
+  function ask(msg, yes, onYes) {
+    if (!hasProgress()) { onYes(); return; }
+    $("askText").textContent = msg; $("askYes").textContent = yes || "כן";
+    $("askBox").classList.add("show");
+    $("askYes").onclick = () => { $("askBox").classList.remove("show"); onYes(); };
+  }
+  $("askNo").onclick = () => $("askBox").classList.remove("show");
+  $("askBox").onclick = e => { if (e.target.id === "askBox") $("askBox").classList.remove("show"); };
 
-  $("newCard").onclick = () => { if (!ask("לערבב כרטיס חדש? הסימונים של היום יימחקו.")) return; S.card = newCard(S.card.size); save(); render(); toast("כרטיס חדש מוכן"); };
+  $("newCard").onclick = () => ask("הסימונים בכרטיס הנוכחי יימחקו.", "כרטיס חדש", () => { S.card = newCard(S.card.size); save(); render(); toast("כרטיס חדש מוכן"); });
   $("clearMarks").onclick = () => {
     if (!hasProgress()) { toast("אין סימונים לנקות"); return; }
-    if (!ask("לנקות את כל הסימונים?")) return;
-    S.card.cells.forEach(c => { if (!c.free) c.m = false; }); S.card.seen = []; S.card.full = false; save(); render();
+    ask("כל הסימונים בכרטיס יימחקו. הבינגו שכבר צברת נשאר.", "ניקוי", () => {
+      S.card.cells.forEach(c => { if (!c.free) c.m = false; }); save(); render();
+    });
   };
-  function setSize(n) { if (S.card.size === n) return; if (!ask("החלפת גודל יוצרת כרטיס חדש. להמשיך?")) return; S.size = n; S.card = newCard(n); save(); render(); }
+  function setSize(n) { if (S.card.size === n) return; ask("החלפת גודל יוצרת כרטיס חדש.", "להחליף", () => { S.size = n; S.card = newCard(n); save(); render(); }); }
   if (canFive) $("seg").classList.add("show");
   $("size4").onclick = () => setSize(4);
   $("size5").onclick = () => setSize(5);
@@ -541,6 +612,18 @@
     parts = parts.filter(p => p.y < innerHeight + 40);
     raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0, 0, innerWidth, innerHeight), null);
   }
+
+  // אם הדף נשאר פתוח מעבר לחצות - כרטיס חדש כשחוזרים אליו
+  function checkDay() {
+    if (S.card.day === todayKey()) return;
+    S.card = newCard(S.size || 4);
+    if (S.stats.lastPlayed && dayDiff(S.stats.lastPlayed, todayKey()) > 1) S.stats.streak = 0;
+    save(); render(); toast("כרטיס חדש ליום חדש");
+    const d2 = new Date();
+    $("date").innerHTML = "<b>" + d2.toLocaleDateString("he-IL", { weekday: "long" }) + "</b> · " + d2.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
+  }
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) checkDay(); });
+  addEventListener("focus", checkDay);
 
   let rt;
   addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => render(), 150); });
