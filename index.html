@@ -2,166 +2,280 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d1420">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>בינגו הצוערים</title>
-<meta name="description" content="בינגו לקורס הצוערים לשלטון מקומי">
+<meta name="description" content="בינגו יומי לקורס הצוערים לשלטון מקומי">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f1ea;
-    --ink: #1d2a3a;
-    --muted: #6b7380;
-    --card: #ffffff;
-    --line: #ddd6c8;
-    --mark: #1f4e79;
-    --mark-ink: #ffffff;
-    --win: #d98e04;
-    --win-soft: #fff1d6;
+    --night: #0d1420;
+    --night-2: #16202f;
+    --ivory: #f8f3e8;
+    --ivory-2: #efe6d3;
+    --ink: #142033;
+    --gold: #c9a55a;
+    --gold-hi: #ecd28f;
+    --gold-lo: #9c7a34;
+    --muted: #8f9bb0;
+    --line: rgba(201, 165, 90, .35);
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; }
   body {
     font-family: "Heebo", system-ui, sans-serif;
-    background: var(--bg);
-    color: var(--ink);
+    color: var(--ivory);
+    background:
+      radial-gradient(120% 60% at 50% -10%, #23324a 0%, transparent 60%),
+      radial-gradient(80% 50% at 100% 100%, #1a2537 0%, transparent 60%),
+      var(--night);
     min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 18px 10px 28px;
+    min-height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) 10px max(22px, env(safe-area-inset-bottom));
+    display: flex; flex-direction: column; align-items: center;
   }
-  header { text-align: center; margin-bottom: 14px; }
+  .wrap { width: 100%; max-width: 560px; }
+
+  /* כותרת */
+  header { text-align: center; padding: 6px 0 14px; }
+  .eyebrow {
+    font-size: 12px; letter-spacing: 3px; color: var(--gold);
+    font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .eyebrow::before, .eyebrow::after {
+    content: ""; height: 1px; width: 34px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+  .eyebrow::after { transform: scaleX(-1); }
   h1 {
-    font-size: clamp(30px, 7vw, 46px);
+    font-family: "Frank Ruhl Libre", serif;
     font-weight: 900;
-    margin: 0;
-    letter-spacing: -0.5px;
+    font-size: clamp(38px, 11vw, 56px);
+    line-height: 1;
+    margin: 8px 0 6px;
+    background: linear-gradient(180deg, var(--gold-hi) 0%, var(--gold) 55%, var(--gold-lo) 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
   }
-  h1 span { color: var(--win); }
-  .sub { color: var(--muted); font-size: 15px; margin-top: 2px; }
+  .date { color: var(--muted); font-size: 15px; }
+  .date b { color: var(--ivory); font-weight: 500; }
 
-  .status {
-    display: flex; gap: 10px; align-items: center; justify-content: center;
-    margin-bottom: 12px; font-size: 15px; color: var(--muted);
+  /* נתונים */
+  .stats {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
+    margin-bottom: 14px;
   }
-  .pill {
-    background: var(--card); border: 1px solid var(--line);
-    border-radius: 999px; padding: 4px 12px;
-  }
-  .pill b { color: var(--ink); }
-
-  .board {
-    width: min(94vw, 620px);
-    display: grid;
-    gap: 6px;
-    background: var(--line);
-    padding: 6px;
+  .stat {
+    background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,.015));
+    border: 1px solid var(--line);
     border-radius: 14px;
-    box-shadow: 0 8px 30px rgba(29, 42, 58, 0.12);
+    padding: 9px 6px 8px;
+    text-align: center;
+  }
+  .stat .num {
+    font-family: "Frank Ruhl Libre", serif;
+    font-size: 26px; font-weight: 700; color: var(--gold-hi); line-height: 1.1;
+  }
+  .stat .rank { font-size: 16px; font-weight: 600; color: var(--gold-hi); line-height: 1.6; }
+  .stat .lbl { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* לוח */
+  .frame {
+    padding: 7px;
+    border-radius: 20px;
+    background: linear-gradient(145deg, var(--gold-hi), var(--gold-lo) 45%, var(--gold) 70%, var(--gold-lo));
+    box-shadow: 0 18px 50px rgba(0,0,0,.45), 0 0 0 1px rgba(0,0,0,.3);
+  }
+  .board {
+    display: grid; gap: 5px;
+    background: var(--night-2);
+    padding: 5px; border-radius: 14px;
   }
   .cell {
+    position: relative;
     aspect-ratio: 1 / 1;
-    background: var(--card);
-    border: none;
-    border-radius: 9px;
+    border: none; border-radius: 10px;
+    background: linear-gradient(180deg, var(--ivory) 0%, var(--ivory-2) 100%);
+    color: var(--ink);
+    font-family: "Heebo", sans-serif;
+    font-weight: 600;
+    line-height: 1.18;
+    padding: 5px;
     display: flex; align-items: center; justify-content: center;
     text-align: center;
-    padding: 4px;
-    font-family: inherit;
-    font-weight: 500;
-    color: var(--ink);
-    line-height: 1.2;
-    cursor: pointer;
-    user-select: none;
-    transition: background .15s, color .15s, transform .08s;
+    cursor: pointer; user-select: none;
     overflow: hidden;
-    word-break: break-word;
-    hyphens: auto;
+    transition: transform .12s ease, background .2s, color .2s, box-shadow .2s;
+    box-shadow: inset 0 -2px 0 rgba(20,32,51,.08);
   }
-  .board.s5 .cell { font-size: clamp(10px, 2.55vw, 15px); }
-  .board.s4 .cell { font-size: clamp(12px, 3.3vw, 18px); }
-  .cell:active { transform: scale(.96); }
-  .cell.marked { background: var(--mark); color: var(--mark-ink); }
+  .cell span { display: block; width: 100%; overflow-wrap: normal; word-break: keep-all; }
+  .cell:active { transform: scale(.95); }
+  .cell.marked {
+    background: radial-gradient(120% 120% at 30% 20%, #f3dc9c 0%, var(--gold) 45%, var(--gold-lo) 100%);
+    color: #1b1406;
+    box-shadow: inset 0 0 0 1px rgba(255,240,200,.6), inset 0 -3px 6px rgba(0,0,0,.18);
+  }
+  .cell.marked::after {
+    content: "✓";
+    position: absolute; top: 3px; left: 5px;
+    font-size: 12px; font-weight: 700; color: rgba(27,20,6,.55);
+  }
   .cell.free {
-    background: var(--win-soft); color: var(--win);
-    font-weight: 900; cursor: default;
+    background: radial-gradient(circle at 50% 40%, #24344d, var(--night));
+    color: var(--gold-hi); cursor: default;
+    font-family: "Frank Ruhl Libre", serif; font-weight: 700;
+    box-shadow: inset 0 0 0 1px var(--line);
   }
-  .cell.free.marked { background: var(--win-soft); color: var(--win); }
-  .cell.inline { box-shadow: inset 0 0 0 3px var(--win); }
-  .cell.marked.inline { background: #17395a; }
+  .cell.free::after { content: none; }
+  .cell.inline { animation: glow 1.8s ease-in-out infinite; }
+  @keyframes glow {
+    0%, 100% { box-shadow: inset 0 0 0 2px #fff3cf, 0 0 0 0 rgba(236,210,143,0); }
+    50% { box-shadow: inset 0 0 0 2px #fff3cf, 0 0 14px 2px rgba(236,210,143,.55); }
+  }
+  .cell.stamp { animation: stamp .32s cubic-bezier(.2, 1.5, .4, 1); }
+  @keyframes stamp { 0% { transform: scale(.82); } 100% { transform: scale(1); } }
 
-  .controls {
-    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
-    margin-top: 16px;
+  .progress {
+    margin: 14px 4px 0; height: 4px; border-radius: 4px;
+    background: rgba(255,255,255,.08); overflow: hidden;
   }
+  .progress i {
+    display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--gold-lo), var(--gold-hi));
+    transition: width .35s ease;
+  }
+  .progress-lbl { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); margin: 6px 4px 0; }
+
+  /* כפתורים */
+  .controls { display: flex; gap: 8px; margin-top: 16px; }
   .btn {
+    flex: 1;
     font-family: inherit; font-size: 15px; font-weight: 500;
-    background: var(--card); color: var(--ink);
-    border: 1px solid var(--line); border-radius: 10px;
-    padding: 8px 14px; cursor: pointer;
+    color: var(--ivory);
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--line); border-radius: 12px;
+    padding: 11px 8px; cursor: pointer;
   }
-  .btn:hover { border-color: var(--ink); }
-  .btn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
-  .hint { color: var(--muted); font-size: 13px; margin-top: 14px; text-align: center; max-width: 520px; }
+  .btn:active { background: rgba(201,165,90,.15); }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; flex: 0 0 auto; }
+  .seg button {
+    font-family: inherit; font-size: 15px; font-weight: 500;
+    background: transparent; color: var(--muted); border: none; padding: 11px 13px; cursor: pointer;
+  }
+  .seg button.on { background: var(--gold); color: var(--night); font-weight: 700; }
+  .note { text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.6; margin-top: 16px; }
 
   /* חלון ניצחון */
   .overlay {
-    position: fixed; inset: 0; background: rgba(29, 42, 58, .55);
-    display: none; align-items: center; justify-content: center; z-index: 20;
-    padding: 20px;
+    position: fixed; inset: 0; z-index: 20;
+    background: rgba(5, 9, 15, .72);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 24px;
   }
   .overlay.show { display: flex; }
-  .win-box {
-    background: var(--card); border-radius: 18px; padding: 26px 30px;
-    text-align: center; max-width: 360px; width: 100%;
-    animation: pop .35s cubic-bezier(.2, 1.6, .4, 1);
+  .win {
+    width: 100%; max-width: 340px; text-align: center;
+    background: linear-gradient(180deg, #1c2a40, var(--night));
+    border: 1px solid var(--gold);
+    border-radius: 22px; padding: 30px 24px 24px;
+    box-shadow: 0 30px 80px rgba(0,0,0,.6), inset 0 0 0 4px rgba(201,165,90,.12);
+    animation: pop .4s cubic-bezier(.2, 1.5, .4, 1);
   }
-  .win-box h2 { font-size: 54px; font-weight: 900; margin: 0; color: var(--win); line-height: 1; }
-  .win-box p { margin: 10px 0 18px; font-size: 17px; }
-  @keyframes pop { from { transform: scale(.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .seal {
+    width: 74px; height: 74px; margin: 0 auto 12px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 35% 30%, var(--gold-hi), var(--gold) 50%, var(--gold-lo));
+    color: var(--night); font-family: "Frank Ruhl Libre", serif; font-size: 34px; font-weight: 900;
+    box-shadow: 0 0 0 5px rgba(201,165,90,.2), 0 8px 24px rgba(0,0,0,.4);
+  }
+  .win h2 {
+    font-family: "Frank Ruhl Libre", serif; font-weight: 900; font-size: 46px; margin: 0; line-height: 1.05;
+    background: linear-gradient(180deg, var(--gold-hi), var(--gold)); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .win p { font-size: 17px; line-height: 1.55; margin: 10px 0 20px; color: var(--ivory); }
+  .win .btn { width: 100%; background: var(--gold); color: var(--night); font-weight: 700; border: none; padding: 13px; }
+  @keyframes pop { from { transform: scale(.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
   canvas#confetti { position: fixed; inset: 0; pointer-events: none; z-index: 30; }
+
+  /* הודעה קצרה */
+  .toast {
+    position: fixed; bottom: max(22px, env(safe-area-inset-bottom)); left: 50%;
+    transform: translate(-50%, 30px); opacity: 0;
+    background: var(--ivory); color: var(--ink); font-weight: 600; font-size: 15px;
+    padding: 10px 18px; border-radius: 999px; box-shadow: 0 10px 30px rgba(0,0,0,.4);
+    transition: all .3s ease; z-index: 25; white-space: nowrap;
+  }
+  .toast.show { transform: translate(-50%, 0); opacity: 1; }
 </style>
 </head>
 <body>
+<div class="wrap">
   <header>
-    <h1>בינגו <span>הצוערים</span></h1>
-    <div class="sub">קורס הצוערים לשלטון מקומי</div>
+    <div class="eyebrow">קורס הצוערים לשלטון מקומי</div>
+    <h1>בינגו הצוערים</h1>
+    <div class="date" id="date"></div>
   </header>
 
-  <div class="status">
-    <div class="pill">סומנו <b id="markedCount">0</b></div>
-    <div class="pill">שורות <b id="lineCount">0</b></div>
+  <div class="stats">
+    <div class="stat"><div class="num" id="streak">0</div><div class="lbl">ימים ברצף</div></div>
+    <div class="stat"><div class="num" id="total">0</div><div class="lbl">בינגו סה"כ</div></div>
+    <div class="stat"><div class="rank" id="rank">התנסות ראשונה</div><div class="lbl">דרגה</div></div>
   </div>
 
-  <div id="board" class="board"></div>
+  <div class="frame"><div id="board" class="board"></div></div>
+
+  <div class="progress"><i id="bar"></i></div>
+  <div class="progress-lbl"><span id="markedLbl">0 סומנו</span><span id="linesLbl">0 שורות</span></div>
 
   <div class="controls">
-    <button class="btn" id="newCard">כרטיס חדש</button>
-    <button class="btn" id="clearMarks">ניקוי סימונים</button>
-    <button class="btn" id="size5">5x5</button>
-    <button class="btn" id="size4">4x4</button>
-  </div>
-  <div class="hint">לוחצים על משפט כשהוא קורה, לוחצים שוב כדי לבטל. שורה, עמודה או אלכסון מלאים - בינגו. הכרטיס נשמר בדפדפן, כך שאפשר לסגור ולפתוח את הקישור בלי לאבד אותו.</div>
-
-  <div class="overlay" id="overlay">
-    <div class="win-box">
-      <h2 id="winTitle">בינגו!</h2>
-      <p id="winText">השלמת שורה. עכשיו לצעוק בקול.</p>
-      <button class="btn on" id="closeWin">ממשיכים לשחק</button>
+    <button class="btn" id="newCard">ערבוב כרטיס</button>
+    <button class="btn" id="clearMarks">ניקוי</button>
+    <div class="seg">
+      <button id="size4">4×4</button>
+      <button id="size5">5×5</button>
     </div>
   </div>
-  <canvas id="confetti"></canvas>
+
+  <div class="note">כל בוקר מחכה כרטיס חדש. לוחצים על משפט כשהוא קורה, לוחצים שוב כדי לבטל.<br>שורה, עמודה או אלכסון מלאים - בינגו.</div>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="win">
+    <div class="seal">ב</div>
+    <h2 id="winTitle">בינגו!</h2>
+    <p id="winText"></p>
+    <button class="btn" id="closeWin">ממשיכים לשחק</button>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<canvas id="confetti"></canvas>
 
 <script src="phrases.js"></script>
 <script>
 (function () {
-  const STORE = "cadet-bingo-v1";
-  const FREE = "★ חופשי";
-  const boardEl = document.getElementById("board");
-  let state = load() || newState(5);
-  let seenLines = new Set(state.seenLines || []);
+  const STORE = "cadet-bingo-v2";
+  const FREE = "חופשי";
+  const RANKS = [
+    [0, "התנסות ראשונה"],
+    [3, "רפרנטורה"],
+    [8, "ניהול אגף"],
+    [15, "מנכ\"לות"],
+    [25, "ראשות הרשות"],
+  ];
+  const $ = id => document.getElementById(id);
+  const boardEl = $("board");
+
+  const todayKey = () => {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  };
+  const dayDiff = (a, b) => {
+    const p = s => { const [y, m, d] = s.split("-").map(Number); return Date.UTC(y, m - 1, d); };
+    return Math.round((p(b) - p(a)) / 86400000);
+  };
 
   function shuffle(arr) {
     const a = arr.slice();
@@ -172,148 +286,211 @@
     return a;
   }
 
-  function newState(size) {
+  function newCard(size) {
     const needFree = size % 2 === 1;
     const count = size * size - (needFree ? 1 : 0);
-    const pool = shuffle([...new Set(PHRASES)]);
-    const picked = pool.slice(0, count);
-    while (picked.length < count) picked.push("—");
-    const cells = [];
+    const picked = shuffle([...new Set(PHRASES)]).slice(0, count);
+    while (picked.length < count) picked.push("-");
     const mid = Math.floor((size * size) / 2);
+    const cells = [];
     let k = 0;
     for (let i = 0; i < size * size; i++) {
       if (needFree && i === mid) cells.push({ t: FREE, m: true, free: true });
       else cells.push({ t: picked[k++], m: false });
     }
-    return { size, cells, seenLines: [], full: false };
+    return { size, cells, seen: [], full: false, day: todayKey() };
   }
 
-  function save() {
-    state.seenLines = [...seenLines];
-    try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {}
-  }
   function load() {
-    try {
-      const s = JSON.parse(localStorage.getItem(STORE));
-      if (s && s.cells && s.cells.length === s.size * s.size) return s;
-    } catch (e) {}
-    return null;
+    try { return JSON.parse(localStorage.getItem(STORE)); } catch (e) { return null; }
   }
+  function save() {
+    try { localStorage.setItem(STORE, JSON.stringify(S)); } catch (e) {}
+  }
+
+  const defaultSize = window.innerWidth < 500 ? 4 : 5;
+  let S = load() || { stats: { total: 0, streak: 0, lastPlayed: null }, card: null, size: defaultSize };
+  let freshDay = false;
+  if (!S.card || S.card.day !== todayKey()) {
+    freshDay = !!S.card;
+    S.card = newCard(S.size || defaultSize);
+  }
+  // רצף שנשבר
+  if (S.stats.lastPlayed && dayDiff(S.stats.lastPlayed, todayKey()) > 1) S.stats.streak = 0;
 
   function lines(size) {
-    const L = [];
-    for (let r = 0; r < size; r++) L.push({ id: "r" + r, idx: [...Array(size)].map((_, c) => r * size + c) });
-    for (let c = 0; c < size; c++) L.push({ id: "c" + c, idx: [...Array(size)].map((_, r) => r * size + c) });
-    L.push({ id: "d1", idx: [...Array(size)].map((_, i) => i * size + i) });
-    L.push({ id: "d2", idx: [...Array(size)].map((_, i) => i * size + (size - 1 - i)) });
+    const L = [], r = [...Array(size).keys()];
+    r.forEach(i => L.push({ id: "r" + i, idx: r.map(c => i * size + c) }));
+    r.forEach(c => L.push({ id: "c" + c, idx: r.map(i => i * size + c) }));
+    L.push({ id: "d1", idx: r.map(i => i * size + i) });
+    L.push({ id: "d2", idx: r.map(i => i * size + (size - 1 - i)) });
     return L;
   }
 
-  function render() {
-    const { size, cells } = state;
-    boardEl.className = "board s" + size;
+  // מונע ממירכאות להישאר לבד בשורה
+  const glue = t => t.replace(/"(?=\S)/g, '"\u2060').replace(/(\S)"/g, '$1\u2060"');
+
+  function fit(el, base, min) {
+    const span = el.firstChild;
+    let s = base;
+    span.style.fontSize = s + "px";
+    while (s > min && (span.scrollHeight > el.clientHeight - 6 || span.scrollWidth > span.clientWidth + 1)) {
+      s -= 0.5; span.style.fontSize = s + "px";
+    }
+    // מילה ארוכה מדי גם בגודל המינימלי - מאפשרים לשבור אותה
+    if (span.scrollWidth > span.clientWidth + 1) span.style.overflowWrap = "anywhere";
+  }
+
+  function render(stampIdx) {
+    const { size, cells } = S.card;
     boardEl.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
     boardEl.innerHTML = "";
     const done = lines(size).filter(l => l.idx.every(i => cells[i].m));
-    const inLine = new Set(done.flatMap(l => l.idx));
+    const hot = new Set(done.flatMap(l => l.idx));
+    const cellW = boardEl.clientWidth / size;
+    const base = Math.min(size === 4 ? 17 : 14.5, Math.max(12, cellW * (size === 4 ? 0.2 : 0.21)));
     cells.forEach((c, i) => {
       const b = document.createElement("button");
-      b.className = "cell" + (c.m ? " marked" : "") + (c.free ? " free" : "") + (inLine.has(i) ? " inline" : "");
-      b.textContent = c.t;
+      b.className = "cell" + (c.m ? " marked" : "") + (c.free ? " free" : "") + (hot.has(i) ? " inline" : "") + (i === stampIdx ? " stamp" : "");
+      const sp = document.createElement("span");
+      sp.textContent = glue(c.t);
+      b.appendChild(sp);
       if (!c.free) b.addEventListener("click", () => toggle(i));
       boardEl.appendChild(b);
+      fit(b, c.free ? base + 2 : base, 10.5);
     });
-    document.getElementById("markedCount").textContent = cells.filter(c => c.m && !c.free).length;
-    document.getElementById("lineCount").textContent = done.length;
-    document.getElementById("size5").classList.toggle("on", size === 5);
-    document.getElementById("size4").classList.toggle("on", size === 4);
+    const marked = cells.filter(c => c.m && !c.free).length;
+    const playable = cells.filter(c => !c.free).length;
+    $("bar").style.width = (marked / playable * 100) + "%";
+    $("markedLbl").textContent = `${marked} מתוך ${playable} סומנו`;
+    $("linesLbl").textContent = done.length === 1 ? "שורה אחת" : `${done.length} שורות`;
+    $("size4").classList.toggle("on", size === 4);
+    $("size5").classList.toggle("on", size === 5);
+    renderStats();
     return done;
   }
 
+  function rankOf(n) { let r = RANKS[0][1]; RANKS.forEach(([min, name]) => { if (n >= min) r = name; }); return r; }
+  function nextRank(n) { return RANKS.find(([min]) => min > n); }
+
+  function renderStats() {
+    $("streak").textContent = S.stats.streak;
+    $("total").textContent = S.stats.total;
+    $("rank").textContent = rankOf(S.stats.total);
+  }
+
+  function markPlayedToday() {
+    const t = todayKey();
+    if (S.stats.lastPlayed === t) return;
+    const gap = S.stats.lastPlayed ? dayDiff(S.stats.lastPlayed, t) : null;
+    S.stats.streak = gap === 1 ? S.stats.streak + 1 : 1;
+    S.stats.lastPlayed = t;
+    if (S.stats.streak > 1) toast(`${S.stats.streak} ימים ברצף. ככה בונים קריירה.`);
+  }
+
   function toggle(i) {
-    state.cells[i].m = !state.cells[i].m;
-    const done = render();
-    const doneIds = new Set(done.map(l => l.id));
-    // שורות שבוטלו יוכלו לזכות שוב
-    seenLines.forEach(id => { if (!doneIds.has(id)) seenLines.delete(id); });
-    const fresh = done.filter(l => !seenLines.has(l.id));
-    fresh.forEach(l => seenLines.add(l.id));
-    const allMarked = state.cells.every(c => c.m);
-    if (allMarked && !state.full) {
-      state.full = true;
-      celebrate("בלאק-אאוט!", "סימנת את כל הכרטיס. הקורס הזה לא יפתיע אותך יותר.");
+    const c = S.card.cells[i];
+    c.m = !c.m;
+    if (c.m) { markPlayedToday(); if (navigator.vibrate) navigator.vibrate(12); }
+    const done = render(c.m ? i : -1);
+    const ids = new Set(done.map(l => l.id));
+    S.card.seen = S.card.seen.filter(id => ids.has(id));
+    const fresh = done.filter(l => !S.card.seen.includes(l.id));
+    fresh.forEach(l => S.card.seen.push(l.id));
+    const before = rankOf(S.stats.total);
+    S.stats.total += fresh.length;
+    const after = rankOf(S.stats.total);
+    const all = S.card.cells.every(x => x.m);
+
+    if (all && !S.card.full) {
+      S.card.full = true;
+      celebrate("כרטיס מלא!", "סימנת את כל הכרטיס. אין יותר מה ללמד אותך.");
     } else if (fresh.length) {
-      const n = done.length;
-      celebrate("בינגו!", n === 1 ? "השלמת שורה. עכשיו לצעוק בקול." : `כבר ${n} שורות. מישהו פה מקשיב טוב מדי.`);
+      let txt = done.length === 1 ? "השלמת שורה ראשונה. עכשיו לצעוק בקול." : `כבר ${done.length} שורות היום. מישהו פה מקשיב טוב מדי.`;
+      if (after !== before) txt = `עלית בדרגה: ${after}.`;
+      else { const nx = nextRank(S.stats.total); if (nx) txt += ` עוד ${nx[0] - S.stats.total} עד ${nx[1]}.`; }
+      celebrate("בינגו!", txt);
     }
-    if (!allMarked) state.full = false;
+    if (!all) S.card.full = false;
+    renderStats();
     save();
   }
 
   function celebrate(title, text) {
-    document.getElementById("winTitle").textContent = title;
-    document.getElementById("winText").textContent = text;
-    document.getElementById("overlay").classList.add("show");
+    $("winTitle").textContent = title;
+    $("winText").textContent = text;
+    $("overlay").classList.add("show");
     confetti();
-    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    if (navigator.vibrate) navigator.vibrate([60, 40, 120]);
+  }
+  $("closeWin").onclick = () => $("overlay").classList.remove("show");
+  $("overlay").onclick = e => { if (e.target.id === "overlay") $("overlay").classList.remove("show"); };
+
+  let tt;
+  function toast(msg) {
+    const t = $("toast"); t.textContent = msg; t.classList.add("show");
+    clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2600);
   }
 
-  document.getElementById("closeWin").onclick = () => document.getElementById("overlay").classList.remove("show");
-  document.getElementById("overlay").onclick = e => { if (e.target.id === "overlay") e.target.classList.remove("show"); };
+  const hasProgress = () => S.card.cells.some(c => c.m && !c.free);
+  const ask = msg => !hasProgress() || window.confirm(msg);
 
-  document.getElementById("newCard").onclick = () => {
-    if (!confirmIfProgress("לערבב כרטיס חדש? הסימונים הנוכחיים יימחקו.")) return;
-    state = newState(state.size); seenLines = new Set(); save(); render();
+  $("newCard").onclick = () => {
+    if (!ask("לערבב כרטיס חדש? הסימונים של היום יימחקו.")) return;
+    S.card = newCard(S.card.size); save(); render();
   };
-  document.getElementById("clearMarks").onclick = () => {
-    if (!confirmIfProgress("לנקות את כל הסימונים?")) return;
-    state.cells.forEach(c => { if (!c.free) c.m = false; });
-    seenLines = new Set(); state.full = false; save(); render();
+  $("clearMarks").onclick = () => {
+    if (!ask("לנקות את כל הסימונים?")) return;
+    S.card.cells.forEach(c => { if (!c.free) c.m = false; });
+    S.card.seen = []; S.card.full = false; save(); render();
   };
   function setSize(n) {
-    if (state.size === n) return;
-    if (!confirmIfProgress("החלפת גודל יוצרת כרטיס חדש. להמשיך?")) return;
-    state = newState(n); seenLines = new Set(); save(); render();
+    if (S.card.size === n) return;
+    if (!ask("החלפת גודל יוצרת כרטיס חדש. להמשיך?")) return;
+    S.size = n; S.card = newCard(n); save(); render();
   }
-  document.getElementById("size5").onclick = () => setSize(5);
-  document.getElementById("size4").onclick = () => setSize(4);
+  $("size4").onclick = () => setSize(4);
+  $("size5").onclick = () => setSize(5);
 
-  function confirmIfProgress(msg) {
-    const any = state.cells.some(c => c.m && !c.free);
-    return !any || window.confirm(msg);
-  }
+  // תאריך
+  const d = new Date();
+  $("date").innerHTML = "<b>" + d.toLocaleDateString("he-IL", { weekday: "long" }) + "</b> · " +
+    d.toLocaleDateString("he-IL", { day: "numeric", month: "long" });
 
-  // קונפטי פשוט
-  const cv = document.getElementById("confetti");
-  const ctx = cv.getContext("2d");
+  // קונפטי בגווני זהב
+  const cv = $("confetti"), ctx = cv.getContext("2d");
   let parts = [], raf = null;
   function confetti() {
-    cv.width = innerWidth; cv.height = innerHeight;
-    const colors = ["#d98e04", "#1f4e79", "#c0392b", "#2e8b57", "#f4c542"];
-    for (let i = 0; i < 160; i++) {
+    cv.width = innerWidth * devicePixelRatio; cv.height = innerHeight * devicePixelRatio;
+    ctx.setTransform(devicePixelRatio, 0, 0, devicePixelRatio, 0, 0);
+    const colors = ["#ecd28f", "#c9a55a", "#9c7a34", "#f8f3e8", "#fff3cf"];
+    for (let i = 0; i < 170; i++) {
       parts.push({
-        x: Math.random() * cv.width, y: -20 - Math.random() * cv.height * 0.4,
-        w: 6 + Math.random() * 6, h: 8 + Math.random() * 8,
-        vy: 2 + Math.random() * 4, vx: -2 + Math.random() * 4,
-        r: Math.random() * Math.PI, vr: -0.2 + Math.random() * 0.4,
+        x: innerWidth / 2 + (Math.random() - .5) * 60, y: innerHeight * .35,
+        vx: (Math.random() - .5) * 13, vy: -6 - Math.random() * 9,
+        w: 5 + Math.random() * 6, h: 7 + Math.random() * 9,
+        r: Math.random() * 6, vr: (Math.random() - .5) * .4,
         c: colors[i % colors.length]
       });
     }
     if (!raf) tick();
   }
   function tick() {
-    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.clearRect(0, 0, innerWidth, innerHeight);
     parts.forEach(p => {
-      p.x += p.vx; p.y += p.vy; p.r += p.vr; p.vy += 0.05;
+      p.vy += .28; p.vx *= .985; p.x += p.vx; p.y += p.vy; p.r += p.vr;
       ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r);
-      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h); ctx.restore();
+      ctx.fillStyle = p.c; ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h * Math.abs(Math.cos(p.r * 2)));
+      ctx.restore();
     });
-    parts = parts.filter(p => p.y < cv.height + 30);
-    raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0, 0, cv.width, cv.height), null);
+    parts = parts.filter(p => p.y < innerHeight + 40);
+    raf = parts.length ? requestAnimationFrame(tick) : (ctx.clearRect(0, 0, innerWidth, innerHeight), null);
   }
 
-  save();
-  render();
+  let rt;
+  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(() => render(), 150); });
+  const start = () => { render(); save(); if (freshDay) toast("כרטיס חדש ליום חדש"); };
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(start); else start();
 })();
 </script>
 </body>
