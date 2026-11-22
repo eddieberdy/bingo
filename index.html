@@ -429,7 +429,7 @@
     if (next) {
       const from = RANKS[k][0];
       $("rankbar").style.width = ((t - from) / (next[0] - from) * 100) + "%";
-      $("rankNext").textContent = `עוד ${next[0] - t} ל${next[1]}`;
+      $("rankNext").textContent = "רק עוד קצת";
     } else { $("rankbar").style.width = "100%"; $("rankNext").textContent = "הדרגה הגבוהה ביותר"; }
   }
 
