@@ -326,6 +326,13 @@
     freshDay = !!S.card;
     S.card = newCard(S.size || defaultSize);
   }
+  // אם המאגר השתנה והכרטיס מכיל משפט שכבר לא קיים - כרטיס חדש
+  const UNIQUE = [...new Set(PHRASES)];
+  const canFive = UNIQUE.length >= 24;
+  if (!canFive && S.size === 5) S.size = 4;
+  if (S.card.cells.some(c => !c.free && !UNIQUE.includes(c.t)) || (!canFive && S.card.size === 5)) {
+    S.card = newCard(S.size || 4);
+  }
   // רצף שנשבר
   if (S.stats.lastPlayed && dayDiff(S.stats.lastPlayed, todayKey()) > 1) S.stats.streak = 0;
 
@@ -460,6 +467,7 @@
     if (!ask("החלפת גודל יוצרת כרטיס חדש. להמשיך?")) return;
     S.size = n; S.card = newCard(n); save(); render();
   }
+  if (!canFive) $("size5").parentElement.style.display = "none";
   $("size4").onclick = () => setSize(4);
   $("size5").onclick = () => setSize(5);
 
